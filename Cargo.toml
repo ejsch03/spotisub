@@ -35,3 +35,7 @@ zerocopy = { version = "0.8.39", features = ["derive"] }
 vergen = "=9.0.6"
 vergen-gitcl = "=1.0.8"
 vergen-lib = "=0.1.6"
+
+[profile.release]
+lto = true
+codegen-units = 1
