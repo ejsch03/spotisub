@@ -32,6 +32,8 @@ The other implemented endpoints are stubs.
 - [ ] Add/improve documentation.
 - [ ] Fix `stream` behavior (a bit buggy).
 - [ ] Implement automatic session refresh on expiry.
+- [ ] Implement the [seek](https://opensubsonic.netlify.app/docs/extensions/transcodeoffset/) extension.
+  - [ ] Add this extension to the `getOpenSubsonicExtensions` response.
 - [ ] Implement `getArtists` endpoint.
 - [ ] Implement `getPlaylists` endpoint.
 - [ ] Fine-tune Opus encoding.
