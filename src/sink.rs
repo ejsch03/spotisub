@@ -1,31 +1,14 @@
-use librespot::playback::{
-    audio_backend::{Sink, SinkResult},
-    config::AudioFormat,
-    convert::Converter,
-    decoder::AudioPacket,
-};
-use parking_lot::Mutex;
-use tokio::sync::mpsc::UnboundedSender;
-use zerocopy::IntoBytes;
-
-use crate::*;
+use crate::prelude::*;
 
 #[derive(Clone, Debug)]
 pub struct StreamingSink {
-    tx: Arc<Mutex<Option<UnboundedSender<Vec<u8>>>>>,
     format: AudioFormat,
+    tx: UnboundedSender<Vec<u8>>,
 }
 
 impl StreamingSink {
-    pub fn new(format: AudioFormat) -> Self {
-        Self {
-            tx: Default::default(),
-            format,
-        }
-    }
-
-    pub fn set_sender(&self, tx: UnboundedSender<Vec<u8>>) {
-        *self.tx.lock() = Some(tx)
+    pub fn new(format: AudioFormat, tx: UnboundedSender<Vec<u8>>) -> Self {
+        Self { format, tx }
     }
 }
 
@@ -42,13 +25,7 @@ impl Sink for StreamingSink {
             },
             AudioPacket::Raw(bytes) => bytes,
         };
-
-        // Receiver dropped = client disconnected, silently stop
-        if let Some(tx) = &*self.tx.lock() {
-            _ = tx.send(bytes);
-        } else {
-            log::warn!("no avaiable UnboundedSender<Vec<u8>>!");
-        }
+        _ = self.tx.send(bytes);
         Ok(())
     }
 }
