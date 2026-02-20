@@ -1,7 +1,4 @@
-use actix_web::HttpResponse;
-use serde::Serialize;
-
-use crate::*;
+use crate::prelude::*;
 
 #[derive(Serialize)]
 pub struct SubsonicResponse<T> {
@@ -34,7 +31,7 @@ impl<T: Serialize> ResponseBody<T> {
             status,
             version: API_VERSION,
             r#type: env!("CARGO_PKG_NAME"),
-            server_version: "0.1.3 (tag)",
+            server_version: env!("CARGO_PKG_VERSION"),
             open_subsonic: true,
             data,
         }
@@ -52,15 +49,72 @@ impl<T: Serialize> ResponseBody<T> {
         Self::new(Status::Failed, None)
     }
 
-    // pub const fn failed_with(data: T) -> Self {
-    //     Self::new(Status::Failed, Some(data))
-    // }
-
     pub fn into_response(self) -> HttpResponse {
         let mut res = match self.status {
             Status::Ok => HttpResponse::Ok(),
             Status::Failed => HttpResponse::InternalServerError(),
         };
         res.json(SubsonicResponse { response: self })
+    }
+}
+
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Song {
+    pub id: String,
+    pub title: String,
+    pub album: String,
+    pub track: u32,
+    pub duration: u64,
+    pub is_dir: bool,
+    pub r#type: &'static str,
+    pub media_type: &'static str,
+    pub suffix: &'static str,
+    pub content_type: &'static str,
+    pub bit_rate: u32,
+    pub bit_depth: u32,
+    pub sampling_rate: u32,
+    pub channel_count: u32,
+    pub transcoded_suffix: &'static str,
+    pub transcoded_content_type: &'static str,
+    pub disc_number: i32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub artist: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cover_art: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub created: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub explicit_status: Option<&'static str>,
+}
+
+impl Song {
+    pub fn from_spotify(t: &FullTrack) -> Option<Self> {
+        let id = t.id.as_ref()?.id().to_string();
+        let dur = t.duration.to_std().ok()?.as_secs();
+
+        Some(Self {
+            id,
+            title: t.name.clone(),
+            album: t.album.name.clone(),
+            track: t.track_number,
+            duration: dur,
+            is_dir: false,
+            r#type: "music",
+            media_type: "song",
+            suffix: "ogg",
+            content_type: "audio/ogg",
+            bit_rate: 320,
+            bit_depth: 16,
+            sampling_rate: 44100,
+            channel_count: 2,
+            transcoded_suffix: "opus",
+            transcoded_content_type: "audio/ogg; codecs=opus",
+            disc_number: t.disc_number,
+            artist: t.artists.first().map(|a| a.name.clone()),
+            cover_art: t.album.id.as_ref().map(|id| id.id().to_string()),
+            created: t.album.release_date.clone(),
+            explicit_status: if t.explicit { Some("explicit") } else { None },
+        })
     }
 }
