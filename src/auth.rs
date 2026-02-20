@@ -1,9 +1,4 @@
-use std::collections::HashMap;
-
-use librespot::{core::Session, oauth::OAuthToken};
-use md5::{Digest, Md5};
-
-use crate::*;
+use crate::prelude::*;
 
 pub fn verify_auth(acct: &Account, params: &HashMap<String, String>) -> bool {
     // Accept user=admin and password=admin
