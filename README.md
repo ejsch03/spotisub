@@ -27,8 +27,6 @@ Create the `$HOME/spotisub.json` file. Every entry is required.
 - [x] `search3`
 - [x] `stream`
 
-The other implemented endpoints are stubs.
-
 
 ## Todo
 - [ ] Add/improve documentation.
