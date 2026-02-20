@@ -1,15 +1,19 @@
-use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-
 use clap::Parser;
 
-use crate::*;
+use crate::prelude::*;
 
 fn local_addr() -> SocketAddr {
     let ip = local_ip_address::list_afinet_netifas()
         .ok()
         .and_then(|addrs| {
-            addrs.into_iter().find_map(|(_, ip)| match ip {
-                IpAddr::V4(v4) if !v4.is_loopback() && !v4.is_link_local() => Some(ip),
+            addrs.into_iter().find_map(|(name, ip)| match ip {
+                IpAddr::V4(v4)
+                    if !v4.is_loopback()
+                        && !v4.is_link_local()
+                        && ["Ethernet", "Wi-Fi"].contains(&name.as_str()) =>
+                {
+                    Some(ip)
+                }
                 _ => None,
             })
         })
