@@ -1,29 +1,19 @@
 #![allow(dead_code)] // temp
 
-use librespot::core::Session;
-use librespot::oauth::OAuthToken;
-use librespot::playback::config::{AudioFormat, PlayerConfig};
-use librespot::playback::mixer::NoOpVolume;
-use librespot::playback::player::Player;
-use reqwest::Client as HttpClient;
-use rspotify::ClientCredsSpotify as RSpotify;
-use tokio::sync::Notify;
-
-use crate::*;
+use crate::prelude::*;
 
 pub struct LibreSpotify {
     cred: Credentials,
     token: OAuthToken,
     sess: Session,
-    sink: StreamingSink,
-    player: Arc<Player>,
-    cancel: Arc<Notify>,
 }
 
 pub struct AppState {
-    http: HttpClient,    // reqwests client
-    rspot: RSpotify,     // spotify dev api
-    lspot: LibreSpotify, // librespot config
+    rspot: RSpotify,                            // spotify dev api
+    lspot: LibreSpotify,                        // librespot config
+    http: HttpClient,                           // reqwests client
+    song_cache: Mutex<HashMap<String, Song>>,   // song metadata cache
+    cover_cache: Mutex<HashMap<String, Bytes>>, // cover-art metadata cache
 }
 
 impl AppState {
@@ -36,40 +26,24 @@ impl AppState {
         let token = get_token().await?;
         let sess = create_session(&token).await?;
 
-        let player_config = PlayerConfig::default();
-        let audio_format = AudioFormat::default();
-
-        // stream sink setup
-        let sink = StreamingSink::new(audio_format);
-
-        let player = Player::new(player_config, sess.clone(), Box::new(NoOpVolume), {
-            let sink = sink.clone();
-            move || Box::new(sink)
-        });
-
-        let lspot = LibreSpotify {
-            cred,
-            token,
-            sess,
-            sink,
-            player,
-            cancel: Default::default(),
-        };
+        let lspot = LibreSpotify { cred, token, sess };
 
         let app_state = Self {
-            http: Default::default(),
             rspot,
             lspot,
+            http: Default::default(),
+            song_cache: Default::default(),
+            cover_cache: Default::default(),
         };
         Ok(app_state)
     }
 
-    pub const fn http(&self) -> &HttpClient {
-        &self.http
-    }
-
     pub const fn rspotify(&self) -> &RSpotify {
         &self.rspot
+    }
+
+    pub const fn http(&self) -> &HttpClient {
+        &self.http
     }
 
     pub const fn cred(&self) -> &Credentials {
@@ -80,19 +54,15 @@ impl AppState {
         &self.lspot.token
     }
 
-    pub const fn session(&self) -> &Session {
-        &self.lspot.sess
+    pub fn session(&self) -> Session {
+        self.lspot.sess.clone()
     }
 
-    pub const fn sink(&self) -> &StreamingSink {
-        &self.lspot.sink
+    pub const fn song_cache(&self) -> &Mutex<HashMap<String, Song>> {
+        &self.song_cache
     }
 
-    pub fn player(&self) -> Arc<Player> {
-        self.lspot.player.clone()
-    }
-
-    pub fn cancel(&self) -> Arc<Notify> {
-        self.lspot.cancel.clone()
+    pub const fn cover_cache(&self) -> &Mutex<HashMap<String, Bytes>> {
+        &self.cover_cache
     }
 }
