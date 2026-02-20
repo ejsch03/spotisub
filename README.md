@@ -19,10 +19,11 @@ Create the `$HOME/spotisub.json` file. Every entry is required.
 
 
 ## Implemented OpenSubsonic Endpoints
-- [x] `ping`
-- [x] `getLicense`
-- [x] `search3`
 - [x] `getCoverArt`
+- [x] `getLicense`
+- [x] `get_user`
+- [x] `ping`
+- [x] `search3`
 - [x] `stream`
 
 The other implemented endpoints are stubs.
@@ -30,8 +31,6 @@ The other implemented endpoints are stubs.
 
 ## Todo
 - [ ] Add/improve documentation.
-- [ ] Fix `stream` behavior (a bit buggy).
 - [ ] Implement automatic session refresh on expiry.
 - [ ] Implement `getArtists` endpoint.
 - [ ] Implement `getPlaylists` endpoint.
-- [ ] Fine-tune Opus encoding.
