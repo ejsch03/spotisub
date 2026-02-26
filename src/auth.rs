@@ -29,7 +29,7 @@ pub fn verify_auth(acct: &Account, params: &HashMap<String, String>) -> bool {
         || (u == acct.user() && p == acct.pass())
 }
 
-pub async fn get_token() -> Result<OAuthToken> {
+pub async fn get_creds() -> Result<LSpotCreds> {
     let scopes = vec!["streaming"];
     let client =
         librespot::oauth::OAuthClientBuilder::new(SPOTIFY_CLIENT_ID, SPOTIFY_REDIRECT_URI, scopes)
@@ -42,22 +42,25 @@ pub async fn get_token() -> Result<OAuthToken> {
         .await
         .map_err(|e| anyhow!("Failed to get access token: {e}"))?;
 
-    // return a fresh token
-    client
-        .refresh_token_async(&token.refresh_token)
-        .await
-        .map_err(Into::into)
+    let creds = LSpotCreds::with_access_token(token.access_token.as_str());
+
+    Ok(creds)
 }
 
-pub async fn create_session(token: &OAuthToken) -> Result<Session> {
-    // authenticate
-    let session_config = librespot::core::SessionConfig::default();
-    let credentials =
-        librespot::discovery::Credentials::with_access_token(token.access_token.as_str());
+pub async fn create_session() -> Result<Session> {
+    // credentials cache
+    let cache = Cache::new(Some("."), None, None, None)?;
+
+    // obtain credentials
+    let creds = if let Some(creds) = cache.credentials() {
+        creds
+    } else {
+        get_creds().await?
+    };
 
     // connect to Spotify session
-    log::trace!("Connecting...");
-    let session = Session::new(session_config, None);
-    session.connect(credentials, true).await?;
+    let session = Session::new(Default::default(), Some(cache));
+    session.connect(creds, true).await?;
+
     Ok(session)
 }
