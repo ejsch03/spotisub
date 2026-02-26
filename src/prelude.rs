@@ -11,8 +11,8 @@ pub use actix_web::{HttpResponse, Responder};
 pub use bytes::Bytes;
 
 // librespot
-pub use librespot::core::{Session, SpotifyId, SpotifyUri};
-pub use librespot::oauth::OAuthToken;
+pub use librespot::core::{Session, SessionConfig, SpotifyId, SpotifyUri, cache::Cache};
+pub use librespot::discovery::Credentials as LSpotCreds;
 pub use librespot::playback::{
     audio_backend::{Sink, SinkResult},
     config::AudioFormat,
@@ -31,8 +31,10 @@ pub use rspotify::prelude::BaseClient;
 pub use md5::{Digest, Md5};
 pub use reqwest::Client as HttpClient;
 pub use serde::Serialize;
-pub use tokio::sync::Mutex;
-pub use tokio::sync::mpsc::{UnboundedSender, unbounded_channel};
+pub use tokio::sync::{
+    Mutex,
+    mpsc::{UnboundedSender, unbounded_channel},
+};
 pub use tokio::time::sleep;
 pub use zerocopy::IntoBytes;
 

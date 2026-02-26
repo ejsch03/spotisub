@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
 pub async fn get_cover_art(
-    data: Data<AppState>,
+    data: Data<State>,
     query: Query<HashMap<String, String>>,
 ) -> impl Responder {
     if !verify_auth(data.cred().account(), &query) {
@@ -57,7 +57,7 @@ pub async fn get_cover_art(
 }
 
 pub async fn get_license(
-    data: Data<AppState>,
+    data: Data<State>,
     query: Query<HashMap<String, String>>,
 ) -> impl Responder {
     if !verify_auth(data.cred().account(), &query) {
@@ -70,7 +70,6 @@ pub async fn get_license(
     .into_response()
 }
 
-// intentionally unauthenticated — clients call this before login to discover server capabilities
 pub async fn get_open_subsonic_extensions() -> impl Responder {
     ResponseBody::ok_with(serde_json::json!({
         "openSubsonicExtensions": [
@@ -83,10 +82,7 @@ pub async fn get_open_subsonic_extensions() -> impl Responder {
     .into_response()
 }
 
-pub async fn get_song(
-    data: Data<AppState>,
-    query: Query<HashMap<String, String>>,
-) -> impl Responder {
+pub async fn get_song(data: Data<State>, query: Query<HashMap<String, String>>) -> impl Responder {
     if !verify_auth(data.cred().account(), &query) {
         return HttpResponse::Unauthorized().finish();
     }
@@ -126,7 +122,7 @@ pub async fn get_song(
     ResponseBody::ok_with(value).into_response()
 }
 
-pub async fn ping(data: Data<AppState>, query: Query<HashMap<String, String>>) -> impl Responder {
+pub async fn ping(data: Data<State>, query: Query<HashMap<String, String>>) -> impl Responder {
     if !verify_auth(data.cred().account(), &query) {
         log::error!("ping: Unauthorized.");
         return HttpResponse::Unauthorized().finish();
@@ -134,10 +130,7 @@ pub async fn ping(data: Data<AppState>, query: Query<HashMap<String, String>>) -
     ResponseBody::<()>::ok().into_response()
 }
 
-pub async fn search3(
-    data: Data<AppState>,
-    query: Query<HashMap<String, String>>,
-) -> impl Responder {
+pub async fn search3(data: Data<State>, query: Query<HashMap<String, String>>) -> impl Responder {
     if !verify_auth(data.cred().account(), &query) {
         log::error!("search3: Unauthorized.");
         return HttpResponse::Unauthorized().finish();
@@ -195,7 +188,7 @@ pub async fn search3(
     .into_response()
 }
 
-pub async fn stream(data: Data<AppState>, query: Query<HashMap<String, String>>) -> impl Responder {
+pub async fn stream(data: Data<State>, query: Query<HashMap<String, String>>) -> impl Responder {
     if !verify_auth(data.cred().account(), &query) {
         log::error!("stream: Unauthorized.");
         return HttpResponse::Unauthorized().finish();
@@ -228,8 +221,15 @@ pub async fn stream(data: Data<AppState>, query: Query<HashMap<String, String>>)
     let (tx, rx) = unbounded_channel();
 
     // create a fresh player and sink per request to avoid shared state races between streams
+    let sess = match data.session().await {
+        Ok(sess) => sess,
+        Err(e) => {
+            log::error!("session: {e}");
+            return HttpResponse::InternalServerError().finish();
+        }
+    };
     let sink = StreamingSink::new(Default::default(), tx);
-    let player = Player::new(Default::default(), data.session(), Box::new(NoOpVolume), {
+    let player = Player::new(Default::default(), sess, Box::new(NoOpVolume), {
         let sink = sink.clone();
         move || Box::new(sink)
     });
@@ -238,7 +238,7 @@ pub async fn stream(data: Data<AppState>, query: Query<HashMap<String, String>>)
     player.load(uri, true, time_offset_ms);
 
     let stream = async_stream::stream! {
-        // keep player alive for the duration of the stream — dropping it closes tx and ends rx
+        // ensure player survives inside this stream
         let _player = player;
         let mut rx = rx;
         let mut pipeline = AudioPipeline::new();

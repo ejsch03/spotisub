@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use clap::Parser;
 
 use crate::prelude::*;
@@ -81,6 +83,9 @@ impl Credentials {
 pub struct ArgsConfig {
     #[arg(short, long, default_value_t = local_addr())]
     addr: SocketAddr,
+
+    #[arg(short, long)]
+    config_path: Option<PathBuf>,
 }
 
 #[derive(Debug)]
@@ -94,18 +99,22 @@ impl Config {
         let args = ArgsConfig::parse();
 
         // obtain config path
-        let config_path = {
-            let mut home_dir = std::env::home_dir()
-                .ok_or_else(|| anyhow::anyhow!("Failed to obtain home directory."))?;
-            home_dir.push(format!("{}.json", env!("CARGO_PKG_NAME")));
-            home_dir
-        };
+        let config_path = args
+            .config_path
+            .map(Ok::<_, anyhow::Error>)
+            .unwrap_or_else(|| {
+                let mut home = std::env::home_dir()
+                    .ok_or_else(|| anyhow::anyhow!("Failed to obtain home directory."))?;
+                home.push(format!("{}.json", env!("CARGO_PKG_NAME")));
+                Ok(home)
+            })?;
+
         // open the config file
         let rdr = std::fs::File::open(&config_path).map_err(|e| {
             if let std::io::ErrorKind::NotFound = e.kind() {
-                anyhow::Error::msg(format!("Failed to open '{}'.", config_path.display()))
+                anyhow!("Failed to open '{}'.", config_path.display())
             } else {
-                anyhow::Error::from(e)
+                e.into()
             }
         })?;
         // read and deserialize from file
@@ -124,7 +133,6 @@ impl Config {
                 client_secret,
             },
         };
-
         Ok(Self { addr, cred })
     }
 
