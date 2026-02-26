@@ -1,14 +1,33 @@
-#![allow(dead_code)] // temp
-
+use crate::auth::*;
 use crate::prelude::*;
 
 pub struct LibreSpotify {
     cred: Credentials,
-    token: OAuthToken,
-    sess: Session,
+    sess: Mutex<Session>,
 }
 
-pub struct AppState {
+impl LibreSpotify {
+    pub async fn session(&self) -> Result<Session> {
+        let mut sess = self.sess.lock().await;
+        if sess.is_invalid() {
+            *sess = Self::create_session().await?;
+        }
+        Ok(sess.clone())
+    }
+
+    async fn create_session() -> Result<Session> {
+        let creds = Cache::new(Some("."), None, None, None)?
+            .credentials()
+            .ok_or(anyhow!("No cached credentials"))?;
+
+        let session_config = SessionConfig::default();
+        let session = Session::new(session_config, None);
+        session.connect(creds, true).await?;
+        Ok(session)
+    }
+}
+
+pub struct State {
     rspot: RSpotify,                            // spotify dev api
     lspot: LibreSpotify,                        // librespot config
     http: HttpClient,                           // reqwests client
@@ -16,17 +35,16 @@ pub struct AppState {
     cover_cache: Mutex<HashMap<String, Bytes>>, // cover-art metadata cache
 }
 
-impl AppState {
+impl State {
     pub async fn new(cred: Credentials) -> Result<Self> {
         let rspot_cred =
             rspotify::Credentials::new(cred.dev().client_id(), cred.dev().client_secret());
         let rspot = RSpotify::new(rspot_cred);
         rspot.request_token().await?;
 
-        let token = get_token().await?;
-        let sess = create_session(&token).await?;
+        let sess = Mutex::new(create_session().await?);
 
-        let lspot = LibreSpotify { cred, token, sess };
+        let lspot = LibreSpotify { cred, sess };
 
         let app_state = Self {
             rspot,
@@ -50,12 +68,8 @@ impl AppState {
         &self.lspot.cred
     }
 
-    pub const fn token(&self) -> &OAuthToken {
-        &self.lspot.token
-    }
-
-    pub fn session(&self) -> Session {
-        self.lspot.sess.clone()
+    pub async fn session(&self) -> Result<Session> {
+        self.lspot.session().await
     }
 
     pub const fn song_cache(&self) -> &Mutex<HashMap<String, Song>> {
