@@ -2,7 +2,7 @@ use crate::prelude::*;
 
 pub async fn run(cfg: Config) -> Result<()> {
     // init application state data
-    let app_state = actix_web::web::Data::new(AppState::new(cfg.cred()).await?);
+    let app_state = actix_web::web::Data::new(State::new(cfg.cred()).await?);
 
     actix_web::HttpServer::new(move || {
         actix_web::App::new()
