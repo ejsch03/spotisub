@@ -27,9 +27,13 @@ Create the `$HOME/spotisub.json` file. Every entry is required.
 - [x] `search3`
 - [x] `stream`
 
+## Generate Authentication
+To obtain a `credentials.json`, run `getauth`.
+```bash
+cargo r --bin getauth
+```
 
 ## Todo
 - [ ] Add/improve documentation.
-- [ ] Implement automatic session refresh on expiry.
 - [ ] Implement `getArtists` endpoint.
 - [ ] Implement `getPlaylists` endpoint.
