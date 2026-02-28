@@ -5,7 +5,7 @@ pub async fn get_cover_art(
     data: Data<State>,
     query: Query<HashMap<String, String>>,
 ) -> impl Responder {
-    if !verify_auth(req, &data, &query).await {
+    if !verify(req, &data, &query).await {
         log::error!("get_cover_art: Unauthorized.");
         return HttpResponse::Unauthorized().finish();
     }
@@ -42,12 +42,10 @@ pub async fn get_cover_art(
             },
             Err(_) => return HttpResponse::InternalServerError().finish(),
         };
-
         data.cover_cache()
             .lock()
             .await
             .insert(id.clone(), bytes.clone());
-
         bytes
     };
 
@@ -62,7 +60,7 @@ pub async fn get_license(
     data: Data<State>,
     query: Query<HashMap<String, String>>,
 ) -> impl Responder {
-    if !verify_auth(req, &data, &query).await {
+    if !verify(req, &data, &query).await {
         log::error!("get_license: Unauthorized.");
         return HttpResponse::Unauthorized().finish();
     }
@@ -89,7 +87,7 @@ pub async fn get_song(
     data: Data<State>,
     query: Query<HashMap<String, String>>,
 ) -> impl Responder {
-    if !verify_auth(req, &data, &query).await {
+    if !verify(req, &data, &query).await {
         return HttpResponse::Unauthorized().finish();
     }
 
@@ -133,7 +131,7 @@ pub async fn ping(
     data: Data<State>,
     query: Query<HashMap<String, String>>,
 ) -> impl Responder {
-    if !verify_auth(req, &data, &query).await {
+    if !verify(req, &data, &query).await {
         log::error!("ping: Unauthorized.");
         return HttpResponse::Unauthorized().finish();
     }
@@ -145,7 +143,7 @@ pub async fn search3(
     data: Data<State>,
     query: Query<HashMap<String, String>>,
 ) -> impl Responder {
-    if !verify_auth(req, &data, &query).await {
+    if !verify(req, &data, &query).await {
         log::error!("search3: Unauthorized.");
         return HttpResponse::Unauthorized().finish();
     }
@@ -207,7 +205,7 @@ pub async fn stream(
     data: Data<State>,
     query: Query<HashMap<String, String>>,
 ) -> impl Responder {
-    if !verify_auth(req, &data, &query).await {
+    if !verify(req, &data, &query).await {
         log::error!("stream: Unauthorized.");
         return HttpResponse::Unauthorized().finish();
     }

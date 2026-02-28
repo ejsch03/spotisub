@@ -1,18 +1,6 @@
 use crate::prelude::*;
 
-pub async fn verify_auth(
-    req: HttpRequest,
-    data: &Data<State>,
-    params: &HashMap<String, String>,
-) -> bool {
-    if let Some(addr) = req.peer_addr() {
-        let mut rate_limits = data.rate_limits().lock().await;
-        if !rate_limits.entry(addr.ip()).or_default().allow() {
-            return false;
-        }
-    } else {
-        return false;
-    }
+pub async fn authenticate(data: &Data<State>, params: &HashMap<String, String>) -> bool {
     let acct = data.cred().account();
 
     // Accept user=admin and password=admin
@@ -38,9 +26,27 @@ pub async fn verify_auth(
     } else {
         return false;
     };
-    (u == "admin" && p == "admin")
-        || (u == "test" && p == "test")
-        || (u == acct.user() && p == acct.pass())
+    (u == acct.user() && p == acct.pass())
+}
+
+pub async fn verify(
+    req: HttpRequest,
+    data: &Data<State>,
+    params: &HashMap<String, String>,
+) -> bool {
+    if let Some(addr) = req.peer_addr() {
+        let mut rate_limits = data.rate_limits().lock().await;
+
+        let limit = rate_limits.entry(addr.ip()).or_default();
+
+        if limit.incr() {
+            authenticate(data, params).await
+        } else {
+            false
+        }
+    } else {
+        false
+    }
 }
 
 pub async fn get_creds() -> Result<LSpotCreds> {
