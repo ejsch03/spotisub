@@ -3,6 +3,7 @@ mod consts;
 mod json;
 mod opus;
 mod prelude;
+mod rate_limit;
 mod routes;
 mod sink;
 mod state;

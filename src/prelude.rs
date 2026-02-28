@@ -1,13 +1,13 @@
 pub use std::collections::HashMap;
 pub use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-pub use std::time::Duration;
+pub use std::time::{Duration, Instant};
 
 // error-handling
 pub use anyhow::{Result, anyhow};
 
 // actix
 pub use actix_web::web::{Data, Query};
-pub use actix_web::{HttpResponse, Responder};
+pub use actix_web::{HttpRequest, HttpResponse, Responder};
 pub use bytes::Bytes;
 
 // librespot
@@ -44,6 +44,7 @@ pub use crate::cfg::*;
 pub use crate::consts::*;
 pub use crate::json::*;
 pub use crate::opus::*;
+pub use crate::rate_limit::*;
 pub use crate::routes::*;
 pub use crate::sink::*;
 pub use crate::state::*;

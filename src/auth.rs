@@ -1,6 +1,20 @@
 use crate::prelude::*;
 
-pub fn verify_auth(acct: &Account, params: &HashMap<String, String>) -> bool {
+pub async fn verify_auth(
+    req: HttpRequest,
+    data: &Data<State>,
+    params: &HashMap<String, String>,
+) -> bool {
+    if let Some(addr) = req.peer_addr() {
+        let mut rate_limits = data.rate_limits().lock().await;
+        if !rate_limits.entry(addr.ip()).or_default().allow() {
+            return false;
+        }
+    } else {
+        return false;
+    }
+    let acct = data.cred().account();
+
     // Accept user=admin and password=admin
     let (u, p) = if let (Some(u), Some(p)) = (params.get("u"), params.get("p")) {
         let password = if let Some(hex) = p.strip_prefix("enc:") {

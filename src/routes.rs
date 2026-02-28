@@ -1,10 +1,11 @@
 use crate::prelude::*;
 
 pub async fn get_cover_art(
+    req: HttpRequest,
     data: Data<State>,
     query: Query<HashMap<String, String>>,
 ) -> impl Responder {
-    if !verify_auth(data.cred().account(), &query) {
+    if !verify_auth(req, &data, &query).await {
         log::error!("get_cover_art: Unauthorized.");
         return HttpResponse::Unauthorized().finish();
     }
@@ -57,10 +58,11 @@ pub async fn get_cover_art(
 }
 
 pub async fn get_license(
+    req: HttpRequest,
     data: Data<State>,
     query: Query<HashMap<String, String>>,
 ) -> impl Responder {
-    if !verify_auth(data.cred().account(), &query) {
+    if !verify_auth(req, &data, &query).await {
         log::error!("get_license: Unauthorized.");
         return HttpResponse::Unauthorized().finish();
     }
@@ -82,8 +84,12 @@ pub async fn get_open_subsonic_extensions() -> impl Responder {
     .into_response()
 }
 
-pub async fn get_song(data: Data<State>, query: Query<HashMap<String, String>>) -> impl Responder {
-    if !verify_auth(data.cred().account(), &query) {
+pub async fn get_song(
+    req: HttpRequest,
+    data: Data<State>,
+    query: Query<HashMap<String, String>>,
+) -> impl Responder {
+    if !verify_auth(req, &data, &query).await {
         return HttpResponse::Unauthorized().finish();
     }
 
@@ -122,16 +128,24 @@ pub async fn get_song(data: Data<State>, query: Query<HashMap<String, String>>) 
     ResponseBody::ok_with(value).into_response()
 }
 
-pub async fn ping(data: Data<State>, query: Query<HashMap<String, String>>) -> impl Responder {
-    if !verify_auth(data.cred().account(), &query) {
+pub async fn ping(
+    req: HttpRequest,
+    data: Data<State>,
+    query: Query<HashMap<String, String>>,
+) -> impl Responder {
+    if !verify_auth(req, &data, &query).await {
         log::error!("ping: Unauthorized.");
         return HttpResponse::Unauthorized().finish();
     }
     ResponseBody::<()>::ok().into_response()
 }
 
-pub async fn search3(data: Data<State>, query: Query<HashMap<String, String>>) -> impl Responder {
-    if !verify_auth(data.cred().account(), &query) {
+pub async fn search3(
+    req: HttpRequest,
+    data: Data<State>,
+    query: Query<HashMap<String, String>>,
+) -> impl Responder {
+    if !verify_auth(req, &data, &query).await {
         log::error!("search3: Unauthorized.");
         return HttpResponse::Unauthorized().finish();
     }
@@ -188,8 +202,12 @@ pub async fn search3(data: Data<State>, query: Query<HashMap<String, String>>) -
     .into_response()
 }
 
-pub async fn stream(data: Data<State>, query: Query<HashMap<String, String>>) -> impl Responder {
-    if !verify_auth(data.cred().account(), &query) {
+pub async fn stream(
+    req: HttpRequest,
+    data: Data<State>,
+    query: Query<HashMap<String, String>>,
+) -> impl Responder {
+    if !verify_auth(req, &data, &query).await {
         log::error!("stream: Unauthorized.");
         return HttpResponse::Unauthorized().finish();
     }

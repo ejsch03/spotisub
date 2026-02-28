@@ -33,6 +33,7 @@ pub struct State {
     http: HttpClient,                           // reqwests client
     song_cache: Mutex<HashMap<String, Song>>,   // song metadata cache
     cover_cache: Mutex<HashMap<String, Bytes>>, // cover-art metadata cache
+    rate_limits: Mutex<HashMap<IpAddr, RateLimit>>,
 }
 
 impl State {
@@ -52,6 +53,7 @@ impl State {
             http: Default::default(),
             song_cache: Default::default(),
             cover_cache: Default::default(),
+            rate_limits: Default::default(),
         };
         Ok(app_state)
     }
@@ -78,5 +80,9 @@ impl State {
 
     pub const fn cover_cache(&self) -> &Mutex<HashMap<String, Bytes>> {
         &self.cover_cache
+    }
+
+    pub const fn rate_limits(&self) -> &Mutex<HashMap<IpAddr, RateLimit>> {
+        &self.rate_limits
     }
 }
