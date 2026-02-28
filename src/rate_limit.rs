@@ -1,5 +1,3 @@
-use crate::prelude::*;
-
 const RATE_LIMIT: u8 = 10;
 
 #[derive(Default)]

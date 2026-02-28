@@ -1,6 +1,6 @@
 pub use std::collections::HashMap;
 pub use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-pub use std::time::{Duration, Instant};
+pub use std::time::Duration;
 
 // error-handling
 pub use anyhow::{Result, anyhow};

@@ -26,7 +26,7 @@ pub async fn authenticate(data: &Data<State>, params: &HashMap<String, String>) 
     } else {
         return false;
     };
-    (u == acct.user() && p == acct.pass())
+    u == acct.user() && p == acct.pass()
 }
 
 pub async fn verify(
@@ -40,7 +40,12 @@ pub async fn verify(
         let limit = rate_limits.entry(addr.ip()).or_default();
 
         if limit.incr() {
-            authenticate(data, params).await
+            if authenticate(data, params).await {
+                limit.reset();
+                true
+            } else {
+                false
+            }
         } else {
             false
         }
